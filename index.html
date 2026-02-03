@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestor de Pozo - Gaming Pool</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Icons -->
+    <link
+      href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Header / Pool Display -->
+      <header class="pool-header">
+        <div class="logo"><i class="bx bxs-bank"></i> POZO COMÚN</div>
+        <div class="pool-display">
+          <span class="currency">$</span>
+          <span id="pool-amount">0</span>
+        </div>
+            <div class="pool-actions">
+                <div class="global-controls">
+                    <button class="btn glass-btn" id="global-charge-btn" title="Restar a todos (Suman al pozo)">
+                        <i class='bx bx-group'></i> 
+                        <i class='bx bx-right-arrow-alt'></i>
+                        <i class='bx bxs-bank'></i>
+                        Todos al Pozo
+                    </button>
+                    <!-- Global Pay Removed -->
+                </div>
+            </div>
+      </header>
+
+      <!-- Main Content -->
+      <main>
+        <!-- Members Grid -->
+        <section class="members-section">
+          <div id="members-grid" class="members-grid">
+            <!-- Member cards will be injected here -->
+          </div>
+        </section>
+
+        <!-- Add Member Section (Moved to bottom) -->
+        <section class="add-member-section glass-card">
+          <h2><i class="bx bx-user-plus"></i> Nuevo Integrante</h2>
+          <div class="input-group">
+            <input
+              type="text"
+              id="new-member-name"
+              placeholder="Nombre del jugador"
+            />
+            <button class="btn primary-btn" onclick="addMember()">
+              Agregar
+            </button>
+          </div>
+        </section>
+        
+        <!-- Reset App Section -->
+        <section class="reset-section">
+            <button class="btn glass-btn danger full-width" onclick="resetApp()">
+                <i class='bx bx-trash'></i> Reiniciar Todo
+            </button>
+        </section>
+      </main>
+
+      <!-- Transaction Modal -->
+      <div id="modal" class="modal hidden">
+        <div class="modal-content glass-card">
+          <div class="modal-header">
+            <h3 id="modal-title">Transacción</h3>
+            <button class="close-btn" onclick="closeModal()">
+              <i class="bx bx-x"></i>
+            </button>
+          </div>
+                <div class="modal-body">
+                    <p id="modal-desc" class="modal-desc"></p>
+                    
+                    <input type="number" id="transaction-amount" placeholder="Monto $" autofocus>
+                    
+                    <!-- Dynamic Transaction Controls -->
+                    <div id="dynamic-controls" class="dynamic-inputs">
+                        <!-- Injected by JS -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn secondary-btn" onclick="closeModal()">Cancelar</button>
+                    <button class="btn primary-btn" onclick="executeTransaction()">Confirmar</button>
+                </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
