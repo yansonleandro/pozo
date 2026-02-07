@@ -40,6 +40,7 @@ body {
 
 /* Utils */
 .glass-card {
+  word-break: break-word; /* Prevent overflow if name too long */
   background: var(--card-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -57,10 +58,23 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: normal;
+  text-align: center;
+  justify-content: center;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 0.9rem;
+}
+
+.small-btn {
+  padding: 0.4rem;
+  font-size: 0.85rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap; 
+  line-height: 1.2;
 }
 
 .primary-btn {
@@ -104,6 +118,7 @@ body {
   font-weight: 700;
   background: linear-gradient(to right, #fff, #94a3b8);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   line-height: 1;
 }
@@ -113,9 +128,21 @@ body {
 /* Grid Layout Optimized for Mobile */
 .members-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2 Columns ALWAYS */
+  grid-template-columns: repeat(2, minmax(0, 1fr)); 
   gap: 0.8rem;
   margin-bottom: 2rem;
+  transition: grid-template-columns 0.3s ease-out, gap 0.3s ease-out; /* Smooth transition */
+}
+
+/* Dynamic Column Sizing */
+.members-grid.expand-left {
+    grid-template-columns: 1.03fr 0.97fr;
+    gap: 0.2rem;
+}
+
+.members-grid.expand-right {
+    grid-template-columns: 0.97fr 1.03fr;
+    gap: 0.2rem;
 }
 
 @media (min-width: 600px) {
@@ -133,6 +160,13 @@ body {
   /* Stronger Border */
   border: 2px solid rgba(255,255,255,0.15);
   box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+}
+
+.excluded-card {
+    opacity: 0.5;
+    filter: grayscale(0.8);
+    border-style: dashed;
 }
 
 /* Compact Card Styles */
@@ -164,8 +198,16 @@ body {
 .member-balance.negative { color: var(--danger-color); }
 
 .actions-row {
+  flex-direction: column;
   gap: 0.5rem;
   width: 100%;
+}
+
+.action-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 0.6rem 0;
+  font-size: 1rem;
 }
 
 .icon-only {
@@ -228,3 +270,53 @@ input:focus {
 
 .global-controls { display: flex; gap: 0.5rem; justify-content: center; width: 100%; }
 .full-width { width: 100%; justify-content: center; }
+
+/* Inline Transaction Form */
+.tx-form-container {
+  margin-top: 1rem;
+  border-top: 1px solid var(--glass-border);
+  padding-top: 1rem;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.inline-tx-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  text-align: left;
+}
+
+.tx-header {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 0.2rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.small-input {
+  padding: 0.6rem;
+  font-size: 0.9rem;
+}
+
+.small-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: -0.4rem;
+}
+
+.tx-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.tx-actions .btn {
+  flex: 1;
+}
