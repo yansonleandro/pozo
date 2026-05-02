@@ -17,6 +17,9 @@ function setupGlobalListeners() {
     setupEnterKey('new-member-name', addMember);
     setupEnterKey('transaction-amount', executeTransaction);
 
+    const amtInput = document.getElementById('transaction-amount');
+    if (amtInput) amtInput.setAttribute('inputmode', 'decimal');
+
     const chargeBtn = document.getElementById('global-charge-btn');
     if (chargeBtn) chargeBtn.onclick = () => openGlobalAction('charge');
     
@@ -131,7 +134,8 @@ function addMember() {
     const newPlayer = {
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         name: name,
-        balance: 0 
+        balance: 0,
+        alias: ''
     };
     
     state.players.push(newPlayer);
@@ -139,6 +143,17 @@ function addMember() {
 
     nameInput.value = '';
     saveState();
+}
+
+function setAlias(id) {
+    const p = state.players.find(x => x.id === id);
+    if(p) {
+        const newAlias = prompt(`Ingresa un alias/CBU para ${p.name}:`, p.alias || '');
+        if (newAlias !== null) {
+            p.alias = newAlias.trim();
+            saveState();
+        }
+    }
 }
 
 function removeMember(id) {
@@ -425,7 +440,10 @@ function render() {
 
         card.innerHTML = `
             <div class="card-row header-row">
-                <span class="member-name small-name">${p.name}</span>
+                <div style="display:flex; align-items:center; gap:0.4rem;">
+                    <span class="member-name small-name">${p.name}</span>
+                    <i class='bx bx-edit-alt' onclick="setAlias('${p.id}')" style="font-size:0.9rem; opacity:0.5; cursor:pointer;" title="Editar Alias"></i>
+                </div>
                 <div class="header-actions" style="display:flex; gap:0.5rem;">
                     <i class='bx ${eyeIcon} action-icon' onclick="toggleMemberVisibility('${p.id}')" title="${eyeTitle}" style="cursor:pointer; opacity:0.7;"></i>
                     <i class='bx bx-trash delete-btn' onclick="removeMember('${p.id}')"></i>
@@ -454,6 +472,100 @@ function render() {
             ` : `<div style="text-align:center; font-size:0.8rem; opacity:0.6; padding:0.5rem;">Excluido del Pozo</div>`}
         `;
         grid.appendChild(card);
+    });
+
+    renderSummary();
+}
+
+function renderSummary() {
+    let summaryContainer = document.getElementById('settlement-summary');
+    if (!summaryContainer) {
+        const grid = document.getElementById('members-grid');
+        if (grid) {
+            summaryContainer = document.createElement('div');
+            summaryContainer.id = 'settlement-summary';
+            grid.parentNode.insertBefore(summaryContainer, grid.nextSibling);
+        }
+    }
+    if (!summaryContainer) return;
+
+    const poolBalance = getPoolBalance();
+    const settlement = calculateSettlement();
+
+    if (settlement.transactions.length === 0) {
+        summaryContainer.innerHTML = '';
+        return;
+    }
+
+    const htmlLines = settlement.transactions.map(t => 
+        `<span><strong>${t.debtor}</strong> le debe dar <strong>$${t.amount.toLocaleString()}</strong> a <strong>${t.creditor}</strong>${t.alias ? ` (alias: <em>${t.alias}</em>)` : ''}</span>`
+    );
+
+    summaryContainer.innerHTML = `
+        <div class="summary-card" style="margin-top: 2rem; padding: 1.5rem; background: rgba(255,255,255,0.05); border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 3rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h3 style="margin:0; display:flex; align-items:center; gap:0.5rem; font-size:1.1rem; opacity:0.9;">
+                    <i class='bx bx-transfer-alt'></i> Resumen de deudas
+                </h3>
+                <button class="btn glass-btn small-btn" onclick="copySummaryToClipboard()" style="padding: 5px 10px; font-size: 0.8rem;">
+                    <i class='bx bx-copy'></i> Copiar Texto
+                </button>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:0.8rem; font-size:0.95rem;">
+                ${htmlLines.join('')}
+            </div>
+        </div>
+    `;
+}
+
+function calculateSettlement() {
+    const poolBalance = getPoolBalance();
+    const participants = state.players
+        .filter(p => p.balance !== 0)
+        .map(p => ({ name: p.name, balance: p.balance, alias: p.alias }));
+
+    if (poolBalance !== 0) {
+        participants.push({ name: 'Pozo Común', balance: poolBalance, alias: '' });
+    }
+
+    // Algoritmo de liquidación optimizada
+    const debtors = participants.filter(p => p.balance < 0).map(p => ({...p, balance: Math.abs(p.balance)})).sort((a, b) => b.balance - a.balance);
+    const creditors = participants.filter(p => p.balance > 0).map(p => ({...p})).sort((a, b) => b.balance - a.balance);
+
+    const transactions = [];
+    let dIdx = 0;
+    let cIdx = 0;
+
+    while (dIdx < debtors.length && cIdx < creditors.length) {
+        const amount = Math.min(debtors[dIdx].balance, creditors[cIdx].balance);
+        if (amount > 0.1) {
+             transactions.push({
+                 debtor: debtors[dIdx].name,
+                 creditor: creditors[cIdx].name,
+                 amount: Math.round(amount),
+                 alias: creditors[cIdx].alias
+             });
+        }
+        debtors[dIdx].balance -= amount;
+        creditors[cIdx].balance -= amount;
+        if (debtors[dIdx].balance < 0.1) dIdx++;
+        if (creditors[cIdx].balance < 0.1) cIdx++;
+    }
+    return { transactions };
+}
+
+function copySummaryToClipboard() {
+    const { transactions } = calculateSettlement();
+    if (transactions.length === 0) return;
+
+    const text = transactions.map(t => 
+        `${t.debtor} le debe $${t.amount.toLocaleString()} a ${t.creditor}${t.alias ? ` (alias ${t.alias})` : ''}`
+    ).join('\n');
+
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Resumen copiado al portapapeles', 'success');
+    }).catch(err => {
+        showToast('Error al copiar', 'error');
     });
 }
 
@@ -504,7 +616,7 @@ function openQuickTransaction(playerId, type) {
                 <span>${isPay ? 'Pagar (-)' : 'Cobrar (+)'}</span>
             </div>
             
-            <input type="number" id="amt-${playerId}" class="glass-input small-input" placeholder="Monto $" autofocus>
+            <input type="number" id="amt-${playerId}" class="glass-input small-input" placeholder="Monto $" autofocus inputmode="decimal">
             
             ${helperBtnHtml}
 
